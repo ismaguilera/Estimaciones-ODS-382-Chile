@@ -118,7 +118,7 @@ dirEPF<-paste0(getwd(),"/Datos/")
 dir.create(file.path(dirEPF))
 
 #descargar web
-destfile_xls<-paste0(getwd(),"/Datos/IPC_1928_2009.xls")
+destfile_xls<-paste0(dirEPF,"IPC_1928_2009.xls")
 download.file(url_ipc_empalme1928_2009,destfile_xls,mode="wb")
 
 Base_ipc_2<-as.data.table(read_xls(destfile_xls,skip=4))
@@ -143,6 +143,9 @@ LP_EPF8<-append(LP_EPF8,ODS382_EPF8[[4]][1]*0.6)
 
 EMP_FGT_EPF8<-EMP_FGT(BASE_ODS382_EPF8,"NPERSONAS","FE2",LP_EPF8)
 
+#Respaldo local archivos
+download.file(url_epf8_gastos,paste0(dirEPF,"EPF8_Gastos.csv"),mode="wb")
+download.file(url_epf8_personas,paste0(dirEPF,"EPF8_Personas.csv"),mode="wb")
 
 #### EPV VII ####
 url_epf7_gastos<-"https://www.ine.gob.cl/docs/default-source/encuesta-de-presupuestos-familiares/bbdd/vii-epf---(noviembre-2011---octubre-2012)/base-gastos-vii-epf-(formato-csv).csv"
@@ -158,17 +161,16 @@ LP_EPF7<-append(LP_EPF7,ODS382_EPF7[[4]][1]*0.6)
 
 EMP_FGT_EPF7<-EMP_FGT(BASE_ODS382_EPF7,"NPERSONA","FE2",LP_EPF7)
 
+#Respaldo local archivos
+download.file(url_epf7_gastos,paste0(dirEPF,"EPF7_Gastos.csv"),mode="wb")
+download.file(url_epf7_personas,paste0(dirEPF,"EPF7_Personas.csv"),mode="wb")
 
 #### EPV VI ####
 options(timeout = max(1000, getOption("timeout")))
 url_epf6 <- "https://www.ine.gob.cl/docs/default-source/encuesta-de-presupuestos-familiares/bbdd/vi-epf---(noviembre-2006---octubre-2007)/base-de-datos-vi-epf---9-divisiones---formato-csv.rar"
 
-#crear carpeta
-dirEPF<-paste0(getwd(),"/Datos/")
-dir.create(file.path(dirEPF))
-
 #descargar web
-destfile_EPF6<-paste0(getwd(),"/Datos/EPF6.rar")
+destfile_EPF6<-paste0(dirEPF,"EPF6.rar")
 download.file(url_epf6,destfile_EPF6,mode="wb")
 
 #descomprimir en pc
@@ -177,12 +179,14 @@ epf6_archivo_personas<-"Ingreso_Qing_Hogares_Nacional_Real.csv"
 cmd <- paste(unzip, "x",shQuote(destfile_EPF6),"-aot -ssc",paste0("-o",shQuote(dirEPF)),epf6_archivo_gastos,epf6_archivo_personas,"-r")
 system(cmd)
 
-EPF6_GASTOS<- fread(paste0(getwd(),"/Datos/",epf6_archivo_gastos))
+file.rename(paste0(dirEPF,epf6_archivo_gastos),paste0(dirEPF,"EPF6_",epf6_archivo_gastos))
+EPF6_GASTOS<- fread(paste0(dirEPF,"EPF6_",epf6_archivo_gastos))
 EPF6_GASTOS[,GASTO2:=as.numeric(gsub(",", ".", Gasto_Real))]
 EPF6_GASTOS[,FE_G:=as.numeric(gsub(",", ".", Factor_Expansion_Anual))]
 GASTOS_HOGAR_EPF6<-EPF6_GASTOS[,.(.N,GTsAI=sum(GASTO2),GS=sum(GASTO2[CodP01=="5000"]),FE_G2=mean(FE_G)),by=clave_hogar]
 
-EPF6_PERSONAS<-fread(paste0(getwd(),"/Datos/",epf6_archivo_personas))
+file.rename(paste0(dirEPF,epf6_archivo_personas),paste0(dirEPF,"EPF6_",epf6_archivo_personas))
+EPF6_PERSONAS<-fread(paste0(dirEPF,"/EPF6_",epf6_archivo_personas))
 EPF6_PERSONAS[,FE2:=as.numeric(gsub(",", ".", Factor_Expansion_Anual))]
 
 BASE_ODS382_EPF6<-GASTOS_HOGAR_EPF6[EPF6_PERSONAS,,on=c(clave_hogar="Clave_hogar")]
@@ -190,6 +194,7 @@ BASE_ODS382_EPF6<-BASE_ODS382_EPF6[!is.na(FE2)]
 BASE_ODS382_EPF6[,GT:=GTsAI+Arriendo_Imputado,by=clave_hogar]
 
 ODS382_EPF6<-ODS382(BASE_ODS382_EPF6,"PersonasXHogar","FE2","clave_hogar")
+
 
 # Según datos OPS
 # LP_EPF6<-c(2737,1205.37,710.01)
@@ -203,12 +208,8 @@ EMP_FGT_EPF6<-EMP_FGT(BASE_ODS382_EPF6,"PersonasXHogar","FE2",LP_EPF6)
 options(timeout = max(1000, getOption("timeout")))
 url_epf5 <- "https://www.ine.gob.cl/docs/default-source/encuesta-de-presupuestos-familiares/bbdd/v-epf---(agosto-1996---julio-1997)/base-de-datos-v-epf---formato-csv.rar"
 
-#crear carpeta
-dirEPF<-paste0(getwd(),"/Datos/")
-dir.create(file.path(dirEPF))
-
 #descargar web
-destfile_EPF5<-paste0(getwd(),"/Datos/EPF5.rar")
+destfile_EPF5<-paste0(dirEPF,"EPF5.rar")
 download.file(url_epf5,destfile_EPF5,mode="wb")
 
 #descomprimir en pc
@@ -218,15 +219,18 @@ epf5_archivo_fe<-"Factor_expansion.csv"
 cmd <- paste(unzip, "x",shQuote(destfile_EPF5),"-aou -ssc",paste0("-o",shQuote(dirEPF)),
              epf5_archivo_gastos, epf5_archivo_personas,epf5_archivo_fe,"-r")
 system(cmd)
-epf5_archivo_personas<-grep("Personas",list.files(dirEPF),value = TRUE)
+epf5_archivo_personas<-grep("^Personas",list.files(dirEPF),value = TRUE)
 
-EPF5_GASTOS<- fread(paste0(dirEPF,epf5_archivo_gastos))
+file.rename(paste0(dirEPF,epf5_archivo_gastos),paste0(dirEPF,"EPF5_",epf5_archivo_gastos))
+EPF5_GASTOS<- fread(paste0(dirEPF,"EPF5_",epf5_archivo_gastos))
 GASTOS_HOGAR_EPF5<-EPF5_GASTOS[,.(.N,GTsAI=sum(Gasto),GS=sum(Gasto[like(Codigo_producto,"^5")])),by=Codigo_hogar]
 
-EPF5_PERSONAS<-fread(paste0(dirEPF,epf5_archivo_personas[1]))
+file.rename(paste0(dirEPF,epf5_archivo_personas),paste0(dirEPF,"EPF5_",epf5_archivo_personas))
+EPF5_PERSONAS<-fread(paste0(dirEPF,"EPF5_",epf5_archivo_personas[1]))
 HOGARES_EPF5<-EPF5_PERSONAS[,.(max_Factor=min(Clave_factor_expansion),npersonas=.N,Arriendo_Imputado=sum(Arriendo_imputado_vivienda,na.rm=TRUE)),by=Numero_hogar]
 
-EPF5_FE<-fread(paste0(dirEPF,epf5_archivo_fe),encoding = "Latin-1")
+file.rename(paste0(dirEPF,epf5_archivo_fe),paste0(dirEPF,"EPF5_",epf5_archivo_fe))
+EPF5_FE<-fread(paste0(dirEPF,"EPF5_",epf5_archivo_fe),encoding = "Latin-1")
 EPF5_FE[,FE2:=as.numeric(gsub(",", ".", Factor_expansion_año))]
 
 HOGARES_EPF5<-HOGARES_EPF5[EPF5_FE[,c("Codigo_factor_expansion","FE2")],,on=c(max_Factor="Codigo_factor_expansion")]
@@ -313,3 +317,10 @@ TABLA_EXCEL_ODS382_aux<-as.data.frame(rbind(c("Indicadores auxiliares",rep('', n
 
 #### Planilla excel ####
 write_xlsx(list("ODS 3.8.2 e indic. relacionados" = TABLA_EXCEL_ODS382, "Indicadores auxiliares" = TABLA_EXCEL_ODS382_aux),"Datos_ODS_382_datos_web.xlsx",col_names = FALSE)
+
+#### Comprimir archivos descargados y limpiar carpeta ####
+file.remove(destfile_EPF6)
+file.remove(destfile_EPF5)
+system(paste(unzip, "a -r Datos.zip",shQuote("./Datos/*",type="cmd")," -mx=9"))
+unlink("Datos",recursive = TRUE)
+
