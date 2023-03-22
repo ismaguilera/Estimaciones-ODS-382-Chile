@@ -1,0 +1,315 @@
+#### CONTACTO ####
+#   Ismael Aguilera
+#   Profesional Depto. Economía de la Salud, DIPLAS, SSP, Minsal
+#   Consultas a: ismael.aguilera@minsal.cl o al anexo: 240484
+#   Última actualización: 21/Marzo/2023
+
+#### Paquetes ####
+list_of_packages <- c("data.table", "scales", "readxl", "writexl","laeken","jsonlite","installr")
+new_packages <- list_of_packages[!(list_of_packages %in% installed.packages()[, "Package"])]
+if (length(new_packages)) {
+  install.packages(new_packages)
+}
+lapply(list_of_packages, require, character.only = TRUE)
+
+#### Programa para descomprimir archivos a descargar ####
+# instalar 7zip para descomprimir desde R los datos de las EPF V y VI en formato rar.
+# También, es posible crear una carpeta con nombre "Datos" desde la actual ubicación,
+# luego descargar mediante navegador y descomprimir con otro programa.
+# En dicho caso, comentar líneas de código
+# Es importante mantener los nombres de los archivos descomprimidos a utilizar en dicha carpeta
+
+ruta_7zip<-"C:/Program Files/7-Zip/7Z.exe"
+if(!file.exists(ruta_7zip)){
+  install.7zip()
+}
+unzip<-shQuote(ruta_7zip)
+
+
+#### Funciones ####
+eval_base<- function(BASE_ODS,pob_epf,expr,cond){
+  return(BASE_ODS[eval(parse(text =cond)),eval(parse(text =expr))]/pob_epf)
+}
+#Lectura bases con formato estándar (EPF8 y EPF7)
+BASE_ODS382_FORMATO<- function(url_gastos,url_personas,var_hogar,var_gasto){
+  EPF_GASTOS<-fread(url_gastos)
+  EPF_GASTOS[,GASTO2:=as.numeric(gsub(",", ".", GASTO))]
+  GASTOS_HOGAR_EPF<-EPF_GASTOS[,.(.N,GT=sum(GASTO2,na.rm=TRUE),GS=sum(GASTO2[D=="6"],na.rm=TRUE)),by=var_hogar]
+  
+  EPF_PERSONAS<-fread(url_personas)
+  EPF_PERSONAS[,FE2:=as.numeric(gsub(",", ".", FE))]
+  JEFE_HOGAR_EPF<-EPF_PERSONAS[JHOGAR=="1"]
+  
+  BASE_ODS382_EPF<-JEFE_HOGAR_EPF[GASTOS_HOGAR_EPF,,on=var_hogar]
+  BASE_ODS382_EPF<-BASE_ODS382_EPF[!is.na(FE2)]
+  
+  expr<-paste0("GT:=as.numeric(gsub(',', '.', ",var_gasto,"))")
+  return(BASE_ODS382_EPF[,eval(parse(text =expr)),by=var_hogar])
+}
+
+#Umbrales 10% y 25% e indicadores auxiliares
+ODS382<-function(BASE_ODS,var_npersonas,var_factor_exp,var_hogar){
+  suma_ponderada<-paste0("sum(",var_npersonas,"*",var_factor_exp,")")
+  pob_epf<-eval_base(BASE_ODS,1,expr=suma_ponderada,cond=paste0("!is.na(",var_factor_exp,")"))
+  
+  BASE_ODS[,('GCS_cA'):=GS/GT,by=var_hogar]  
+  ODS382_datos<-percent(c(eval_base(BASE_ODS,pob_epf,expr=suma_ponderada,cond="GCS_cA>0.10"),
+                    eval_base(BASE_ODS,pob_epf,expr=suma_ponderada,cond="GCS_cA>0.25")),accuracy = 0.001)
+  BASE_ODS[,('GSpc_d'):=GS*12/365/get(var_npersonas),by=var_hogar]
+  gs<-c(percent(eval_base(BASE_ODS,pob_epf,expr=suma_ponderada,cond="GS>0"),accuracy = 0.001), 
+        BASE_ODS[,weighted.mean(GSpc_d,get(var_factor_exp))],                       #promedio
+        BASE_ODS[,weightedMedian(GSpc_d,get(var_factor_exp))])                      #mediana
+  porc_ppto<-percent(BASE_ODS[,mean(GCS_cA)],accuracy = 0.001)
+  BASE_ODS[,('GTpc_d'):=GT*12/365/get(var_npersonas),by=var_hogar]
+  Consumoh<-c(BASE_ODS[,weightedMedian(GTpc_d,get(var_factor_exp))],                #promedio
+              BASE_ODS[,weighted.mean(GTpc_d,get(var_factor_exp))])                 #mediana
+  return(list(ODS382_datos,gs,porc_ppto,Consumoh))
+}
+
+#Medidas de pobreza relacionadas a gastos en salud
+FGT<-function(BASE_ODS,var_npersonas,var_factor_exp){
+  suma_ponderada<-paste0("sum(",var_npersonas,"*",var_factor_exp)
+  pob_epf<-eval_base(BASE_ODS,1,expr=paste0(suma_ponderada,")"),cond=paste0("!is.na(",var_factor_exp,")"))
+  formula_hh_expcapdN<-"*as.numeric(GTpc_d-GSpc_d<Z)*((Z-(GTpc_d-GSpc_d))/Z)^"
+  formula_hh_expcapdG<-"*as.numeric(GTpc_d<Z)*((Z-GTpc_d)/Z)^"
+  condicion_basal<-paste0("!is.na(",var_factor_exp,")")
+  FGT_0<-eval_base(BASE_ODS,pob_epf,expr=paste0(suma_ponderada,formula_hh_expcapdN,"0)"),cond=condicion_basal)-
+    eval_base(BASE_ODS,pob_epf,expr=paste0(suma_ponderada,formula_hh_expcapdG,"0)"),cond=condicion_basal)
+  FGT_1<-eval_base(BASE_ODS,pob_epf,expr=paste0(suma_ponderada,formula_hh_expcapdG,"0)"),cond=paste0("GSpc_d>0"))
+  FGT_2<-eval_base(BASE_ODS,pob_epf,expr=paste0(suma_ponderada,formula_hh_expcapdN,"1)"),cond=condicion_basal)-
+    eval_base(BASE_ODS,pob_epf,expr=paste0(suma_ponderada,formula_hh_expcapdG,"1)"),cond=condicion_basal)
+  return(percent(c(FGT_0,FGT_1,FGT_2),accuracy = 0.01))
+}
+
+#Indicadores de empobrecimiento por gastos en salud
+EMP_FGT<- function(BASE_ODS,var_npersonas,var_factor_exp,LP_EPF){
+  BASE_ODS[,('Z'):=LP_EPF[3]]
+  EMP_FGT_60<-FGT(BASE_ODS,var_npersonas,var_factor_exp)
+  BASE_ODS[,('Z'):=LP_EPF[2]]
+  EMP_FGT_PPP365<-FGT(BASE_ODS,var_npersonas,var_factor_exp)
+  BASE_ODS[,('Z'):=LP_EPF[1]]
+  EMP_FGT_PPP215<-FGT(BASE_ODS,var_npersonas,var_factor_exp)
+  return(list(EMP_FGT_60,EMP_FGT_PPP365,EMP_FGT_PPP215))
+}
+
+#Ajustar formatos a planilla excel de resultado
+formato_base<-function(BASE,indicador){
+  return(rbind(names(BASE[[indicador]]),gsub("\\.", ",", unname(sapply(BASE[[indicador]], as.character))),rep('', ncol(BASE[[indicador]]))))
+}
+
+
+#### DATO PPA ####
+url_PPA_2017_json<-"http://api.worldbank.org/v2/countries/CHL/indicators/PA.NUS.PRVT.PP?format=json&date=2017"
+PPA_2017<-fromJSON(url_PPA_2017_json)[[2]]$value
+#PPA_2017 == 463.231413
+# otro_dato_PPA_2017<- 485.313
+# desde "https://databank.worldbank.org/embed/ICP-2017-Cycle/id/4add74e?inf=n&country=CHL&Series=9260000:INDIVIDUAL%20CONSUMPTION%20EXPENDITURE%20BY%20HOUSEHOLDS%20WITHOUT%20HOUSING"
+
+
+#### DATOS IPC ####
+url_ipc_empalme2009_2023<-"https://www.ine.gob.cl/docs/default-source/%C3%ADndice-de-precios-al-consumidor/cuadros-estadisticos/series-empalmadas-y-antecedentes-historicos/series-empalmadas-diciembre-2009-a-la-fecha/serie-hist%C3%B3rica-empalmada-ipc-diciembre-2009-a-la-fecha-csv.csv"
+url_ipc_empalme1928_2009<-"https://www.ine.gob.cl/docs/default-source/%C3%ADndice-de-precios-al-consumidor/cuadros-estadisticos/series-empalmadas-y-antecedentes-historicos/series-historicas-empalmadas-1928-al-2009/serie-hist%C3%B3rica-empalmada-ipc-general-(%C3%ADndices)-1928---2009.xls"
+
+Base_ipc<-fread(url_ipc_empalme2009_2023,encoding = "Latin-1",skip=3)
+Base_ipc[,IPC:=as.numeric(gsub(",", ".", Índice))]
+
+#crear carpeta
+dirEPF<-paste0(getwd(),"/Datos/")
+dir.create(file.path(dirEPF))
+
+#descargar web
+destfile_xls<-paste0(getwd(),"/Datos/IPC_1928_2009.xls")
+download.file(url_ipc_empalme1928_2009,destfile_xls,mode="wb")
+
+Base_ipc_2<-as.data.table(read_xls(destfile_xls,skip=4))
+colnames(Base_ipc_2)[1]<-"Año"
+Base_ipc_2[, Promedio_base_2008 := rowSums(.SD)/12, .SDcols = 2:13]
+
+Base_ipc<-merge(Base_ipc_2[, c(1,15)],Base_ipc[,.(.N,Promedio_base_2018=mean(IPC)),by="Año"],all=TRUE)
+Base_ipc[,Promedio_base_2018_2:=ifelse(is.na(Promedio_base_2008),Promedio_base_2018,Base_ipc[Año==2009,Promedio_base_2018/Promedio_base_2008]*Promedio_base_2008)]
+
+
+#### EPV VIII ####
+url_epf8_gastos<-"https://www.ine.gob.cl/docs/default-source/encuesta-de-presupuestos-familiares/bbdd/viii-epf---(junio-2016---julio-2017)/base-gastos-viii-epf-(formato-csv).csv"
+url_epf8_personas<-"https://www.ine.gob.cl/docs/default-source/encuesta-de-presupuestos-familiares/bbdd/viii-epf---(junio-2016---julio-2017)/base-personas-viii-epf-(formato-csv).csv"
+
+BASE_ODS382_EPF8<-BASE_ODS382_FORMATO(url_epf8_gastos,url_epf8_personas,"FOLIO","GASTOT_HD_AI")
+ODS382_EPF8<-ODS382(BASE_ODS382_EPF8,"NPERSONAS","FE2","FOLIO")
+
+# Según datos OPS
+# LP_EPF8<-c(5458,1729.77,1018.91)
+LP_EPF8<-c(2.15,3.65)*PPA_2017/Base_ipc[Año==2017,Promedio_base_2018_2]*Base_ipc[Año==2016,Promedio_base_2018_2]
+LP_EPF8<-append(LP_EPF8,ODS382_EPF8[[4]][1]*0.6)
+
+EMP_FGT_EPF8<-EMP_FGT(BASE_ODS382_EPF8,"NPERSONAS","FE2",LP_EPF8)
+
+
+#### EPV VII ####
+url_epf7_gastos<-"https://www.ine.gob.cl/docs/default-source/encuesta-de-presupuestos-familiares/bbdd/vii-epf---(noviembre-2011---octubre-2012)/base-gastos-vii-epf-(formato-csv).csv"
+url_epf7_personas<-"https://www.ine.gob.cl/docs/default-source/encuesta-de-presupuestos-familiares/bbdd/vii-epf---(noviembre-2011---octubre-2012)/base-personas-vii-epf-(formato-csv).csv"
+
+BASE_ODS382_EPF7<-BASE_ODS382_FORMATO(url_epf7_gastos,url_epf7_personas,"FOLIO","GASTOT_FNR_AI")
+ODS382_EPF7<-ODS382(BASE_ODS382_EPF7,"NPERSONA","FE2","FOLIO")
+
+# Según datos OPS
+# LP_EPF7<-c(3373,1450.88,854.63)
+LP_EPF7<-c(2.15,3.65)*PPA_2017/Base_ipc[Año==2017,Promedio_base_2018_2]*Base_ipc[Año==2011,Promedio_base_2018_2]
+LP_EPF7<-append(LP_EPF7,ODS382_EPF7[[4]][1]*0.6)
+
+EMP_FGT_EPF7<-EMP_FGT(BASE_ODS382_EPF7,"NPERSONA","FE2",LP_EPF7)
+
+
+#### EPV VI ####
+options(timeout = max(1000, getOption("timeout")))
+url_epf6 <- "https://www.ine.gob.cl/docs/default-source/encuesta-de-presupuestos-familiares/bbdd/vi-epf---(noviembre-2006---octubre-2007)/base-de-datos-vi-epf---9-divisiones---formato-csv.rar"
+
+#crear carpeta
+dirEPF<-paste0(getwd(),"/Datos/")
+dir.create(file.path(dirEPF))
+
+#descargar web
+destfile_EPF6<-paste0(getwd(),"/Datos/EPF6.rar")
+download.file(url_epf6,destfile_EPF6,mode="wb")
+
+#descomprimir en pc
+epf6_archivo_gastos<-"Gasto_QIng_Nacional_Real.csv"
+epf6_archivo_personas<-"Ingreso_Qing_Hogares_Nacional_Real.csv"
+cmd <- paste(unzip, "x",shQuote(destfile_EPF6),"-aot -ssc",paste0("-o",shQuote(dirEPF)),epf6_archivo_gastos,epf6_archivo_personas,"-r")
+system(cmd)
+
+EPF6_GASTOS<- fread(paste0(getwd(),"/Datos/",epf6_archivo_gastos))
+EPF6_GASTOS[,GASTO2:=as.numeric(gsub(",", ".", Gasto_Real))]
+EPF6_GASTOS[,FE_G:=as.numeric(gsub(",", ".", Factor_Expansion_Anual))]
+GASTOS_HOGAR_EPF6<-EPF6_GASTOS[,.(.N,GTsAI=sum(GASTO2),GS=sum(GASTO2[CodP01=="5000"]),FE_G2=mean(FE_G)),by=clave_hogar]
+
+EPF6_PERSONAS<-fread(paste0(getwd(),"/Datos/",epf6_archivo_personas))
+EPF6_PERSONAS[,FE2:=as.numeric(gsub(",", ".", Factor_Expansion_Anual))]
+
+BASE_ODS382_EPF6<-GASTOS_HOGAR_EPF6[EPF6_PERSONAS,,on=c(clave_hogar="Clave_hogar")]
+BASE_ODS382_EPF6<-BASE_ODS382_EPF6[!is.na(FE2)]
+BASE_ODS382_EPF6[,GT:=GTsAI+Arriendo_Imputado,by=clave_hogar]
+
+ODS382_EPF6<-ODS382(BASE_ODS382_EPF6,"PersonasXHogar","FE2","clave_hogar")
+
+# Según datos OPS
+# LP_EPF6<-c(2737,1205.37,710.01)
+LP_EPF6<-c(2.15,3.65)*PPA_2017/Base_ipc[Año==2017,Promedio_base_2018_2]*Base_ipc[Año==2006,Promedio_base_2018_2]
+LP_EPF6<-append(LP_EPF6,ODS382_EPF6[[4]][1]*0.6)
+
+EMP_FGT_EPF6<-EMP_FGT(BASE_ODS382_EPF6,"PersonasXHogar","FE2",LP_EPF6)
+
+
+#### EPV V ####
+options(timeout = max(1000, getOption("timeout")))
+url_epf5 <- "https://www.ine.gob.cl/docs/default-source/encuesta-de-presupuestos-familiares/bbdd/v-epf---(agosto-1996---julio-1997)/base-de-datos-v-epf---formato-csv.rar"
+
+#crear carpeta
+dirEPF<-paste0(getwd(),"/Datos/")
+dir.create(file.path(dirEPF))
+
+#descargar web
+destfile_EPF5<-paste0(getwd(),"/Datos/EPF5.rar")
+download.file(url_epf5,destfile_EPF5,mode="wb")
+
+#descomprimir en pc
+epf5_archivo_gastos<-"Gasto.csv"
+epf5_archivo_personas<-"Personas.csv"
+epf5_archivo_fe<-"Factor_expansion.csv"
+cmd <- paste(unzip, "x",shQuote(destfile_EPF5),"-aou -ssc",paste0("-o",shQuote(dirEPF)),
+             epf5_archivo_gastos, epf5_archivo_personas,epf5_archivo_fe,"-r")
+system(cmd)
+epf5_archivo_personas<-grep("Personas",list.files(dirEPF),value = TRUE)
+
+EPF5_GASTOS<- fread(paste0(dirEPF,epf5_archivo_gastos))
+GASTOS_HOGAR_EPF5<-EPF5_GASTOS[,.(.N,GTsAI=sum(Gasto),GS=sum(Gasto[like(Codigo_producto,"^5")])),by=Codigo_hogar]
+
+EPF5_PERSONAS<-fread(paste0(dirEPF,epf5_archivo_personas[1]))
+HOGARES_EPF5<-EPF5_PERSONAS[,.(max_Factor=min(Clave_factor_expansion),npersonas=.N,Arriendo_Imputado=sum(Arriendo_imputado_vivienda,na.rm=TRUE)),by=Numero_hogar]
+
+EPF5_FE<-fread(paste0(dirEPF,epf5_archivo_fe),encoding = "Latin-1")
+EPF5_FE[,FE2:=as.numeric(gsub(",", ".", Factor_expansion_año))]
+
+HOGARES_EPF5<-HOGARES_EPF5[EPF5_FE[,c("Codigo_factor_expansion","FE2")],,on=c(max_Factor="Codigo_factor_expansion")]
+BASE_ODS382_EPF5<-HOGARES_EPF5[GASTOS_HOGAR_EPF5,,on=c(Numero_hogar="Codigo_hogar")]
+BASE_ODS382_EPF5<-BASE_ODS382_EPF5[!is.na(FE2)]
+BASE_ODS382_EPF5[,GT:=GTsAI+Arriendo_Imputado,by=Numero_hogar]
+
+ODS382_EPF5<-ODS382(BASE_ODS382_EPF5,"npersonas","FE2","Numero_hogar")
+
+# Según datos OPS
+# LP_EPF5<-c(1339.4,1004.835076,591.8891542)
+LP_EPF5<-c(2.15,3.65)*PPA_2017/Base_ipc[Año==2017,Promedio_base_2018_2]*Base_ipc[Año==1999,Promedio_base_2018_2]
+LP_EPF5<-append(LP_EPF5,ODS382_EPF5[[4]][1]*0.6)
+
+EMP_FGT_EPF5<-EMP_FGT(BASE_ODS382_EPF5,"npersonas","FE2",LP_EPF5)
+
+
+#### Compendio Datos ODS 382 ####
+BASE_ODS382<-list(data.table(Umbrales=c("Gastos en salud mayores al 10% del total de gastos o ingresos de los hogares",
+                                   "Gastos en salud mayores al 25% del total de gastos o ingresos de los hogares"),
+                        "1997"=ODS382_EPF5[[1]],
+                        "2007"=ODS382_EPF6[[1]],
+                        "2012"=ODS382_EPF7[[1]],
+                        "2017"=ODS382_EPF8[[1]]),
+                  data.table("Gastos en salud y pobreza, por año, usando un umbral de pobreza relativo: 60% del total del consumo familiar diario per cápita por día" = c("(Nacional) Empobrecidos (% población)",
+                                                                                                                                                                          "(Nacional) Más Empobrecidos (% población)",
+                                                                                                                                                                          "(Nacional) Incremento en la brecha de la pobreza debido a gastos familiares en salud (puntos porcentuales)"),
+                             "1997"=EMP_FGT_EPF5[[1]],
+                             "2007"=EMP_FGT_EPF6[[1]],
+                             "2012"=EMP_FGT_EPF7[[1]],
+                             "2017"=EMP_FGT_EPF8[[1]]),
+                  data.table("Gasto de los hogares en salud y pobreza, en el umbral de pobreza extrema de PPA2017 $3,65 al día per cápita" = c("(Nacional) Empobrecidos (% población)",
+                                                                                                                                               "(Nacional) Más Empobrecidos (% población)",
+                                                                                                                                               "(Nacional) Incremento en el recuento de la pobreza debidos a gastos familiares en salud (puntos porcentuales)"),
+                             "1997"=EMP_FGT_EPF5[[2]],
+                             "2007"=EMP_FGT_EPF6[[2]],
+                             "2012"=EMP_FGT_EPF7[[2]],
+                             "2017"=EMP_FGT_EPF8[[2]]),
+                  data.table("Gasto de los hogares en salud y pobreza, en el umbral de pobreza extrema de PPA2017 $2.15 al día per cápita" = c("(Nacional) Empobrecidos (% población)",
+                                                                                                                                               "(Nacional) Más Empobrecidos (% población)",
+                                                                                                                                               "(Nacional) Incremento en la brecha de la pobreza debido a gastos familiares en salud (puntos porcentuales)"),
+                             "1997"=EMP_FGT_EPF5[[3]],
+                             "2007"=EMP_FGT_EPF6[[3]],
+                             "2012"=EMP_FGT_EPF7[[3]],
+                             "2017"=EMP_FGT_EPF8[[3]]))
+
+
+TABLA_EXCEL_ODS382<-as.data.frame(rbind(c("Proporción de la población nacional con grandes gastos sanitarios (ODS 3.8.2))",rep('', ncol(BASE_ODS382[[1]])-1)),
+           formato_base(BASE_ODS382,1), formato_base(BASE_ODS382,2),
+           c("Gasto en salud empobrecedor (Indicadores relacionados a los ODS)",rep('', ncol(BASE_ODS382[[2]])-1)),
+           formato_base(BASE_ODS382,3),formato_base(BASE_ODS382,4)
+           ))
+
+BASE_ODS382_aux<-list(data.table("Gastos en salud"=c("(Nacional) Población con algún gasto familiar en salud, (%)",
+                                   "(Nacional) Gasto de los hogares en salud, promedio (per cápita, por día, unidades corrientes locales nominales)",
+                                   "(Nacional) Gasto de los hogares en salud, mediana (per cápita, por día, unidades corrientes locales nominales)"),
+                        "1997"=ODS382_EPF5[[2]],
+                        "2007"=ODS382_EPF6[[2]],
+                        "2012"=ODS382_EPF7[[2]],
+                        "2017"=ODS382_EPF8[[2]]),
+                      data.table("Porcentaje del presupuesto"=c("(Nacional) Gasto de los hogares en salud como proporción del gasto total en consumo de los hogares, media (%)"),
+                                 "1997"=ODS382_EPF5[[3]],
+                                 "2007"=ODS382_EPF6[[3]],
+                                 "2012"=ODS382_EPF7[[3]],
+                                 "2017"=ODS382_EPF8[[3]]),
+                      data.table("Consumo o ingresos del hogar"=c("(Nacional) Gastos de consumo de los hogares, mediana (per cápita, por día, unidades corrientes locales nominales)",
+                                                                  "(Nacional) Gastos de consumo de los hogares, promedio (per cápita, por día, unidades corrientes locales nominales)"),
+                                 "1997"=ODS382_EPF5[[4]],
+                                 "2007"=ODS382_EPF6[[4]],
+                                 "2012"=ODS382_EPF7[[4]],
+                                 "2017"=ODS382_EPF8[[4]]),
+                      data.table("Líneas de pobreza"=c("Umbral de pobreza de la PPA2017$2,15 al día per cápita en moneda local nominal",
+                                                       "Umbral de pobreza de la PPA2017$3,65 al día per cápita en moneda local nominal",
+                                                       "Umbral de pobreza del 60% del gasto de consumo medio en moneda local nominal"),
+                                 "1997"=LP_EPF5,
+                                 "2007"=LP_EPF6,
+                                 "2012"=LP_EPF7,
+                                 "2017"=LP_EPF8))
+
+TABLA_EXCEL_ODS382_aux<-as.data.frame(rbind(c("Indicadores auxiliares",rep('', ncol(BASE_ODS382_aux[[1]])-1)),
+                                        formato_base(BASE_ODS382_aux,1), formato_base(BASE_ODS382_aux,2),formato_base(BASE_ODS382_aux,3),formato_base(BASE_ODS382_aux,4)
+                                        ))
+
+
+#### Planilla excel ####
+write_xlsx(list("ODS 3.8.2 e indic. relacionados" = TABLA_EXCEL_ODS382, "Indicadores auxiliares" = TABLA_EXCEL_ODS382_aux),"Datos_ODS_382_datos_web.xlsx",col_names = FALSE)
