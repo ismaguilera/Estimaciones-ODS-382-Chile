@@ -2,7 +2,7 @@
 #   Ismael Aguilera
 #   Profesional Depto. Economía de la Salud, DIPLAS, SSP, Minsal
 #   Consultas a: ismael.aguilera@minsal.cl o al anexo: 240484
-#   Última actualización: 21/Marzo/2023
+#   Última actualización: 22/Marzo/2023
 
 #### Paquetes ####
 list_of_packages <- c("data.table", "scales", "readxl", "writexl","laeken","jsonlite","installr")
