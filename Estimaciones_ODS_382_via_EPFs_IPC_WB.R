@@ -316,11 +316,11 @@ TABLA_EXCEL_ODS382_aux<-as.data.frame(rbind(c("Indicadores auxiliares",rep('', n
 
 
 #### Planilla excel ####
-write_xlsx(list("ODS 3.8.2 e indic. relacionados" = TABLA_EXCEL_ODS382, "Indicadores auxiliares" = TABLA_EXCEL_ODS382_aux),"Datos_ODS_382_datos_web.xlsx",col_names = FALSE)
+write_xlsx(list("ODS 3.8.2 e indic. relacionados" = TABLA_EXCEL_ODS382, "Indicadores auxiliares" = TABLA_EXCEL_ODS382_aux),"Resultados_ODS382_con_datos_web.xlsx",col_names = FALSE)
 
 #### Comprimir archivos descargados y limpiar carpeta ####
 file.remove(destfile_EPF6)
 file.remove(destfile_EPF5)
-system(paste(unzip, "a -r Datos.zip",shQuote("./Datos/*",type="cmd")," -mx=9"))
+system(paste(unzip, "a -r Respaldo_Datos382_IPC_EPF5a8.zip",shQuote("./Datos/*",type="cmd")," -mx=9"))
 unlink("Datos",recursive = TRUE)
 
