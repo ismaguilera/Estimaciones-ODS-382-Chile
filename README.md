@@ -53,7 +53,7 @@ Por cualquiera de esos motivos u otros, como proyectos afines, estemos en contac
 
 ## Contacto
 
-Ismael Aguilera, Profesional [Deptartamento de Economía de la Salud](http://desal.minsal.cl/), DIPLAS, Subsecretaría de Salud Pública
+Ismael Aguilera, Profesional [Departamento de Economía de la Salud](http://desal.minsal.cl/), DIPLAS, Subsecretaría de Salud Pública
 
 Consultas a: [ismael.aguilera\@minsal.cl](mailto:ismael.aguilera@minsal.cl)
 
