@@ -97,6 +97,16 @@ formato_base<-function(BASE,indicador){
   return(rbind(names(BASE[[indicador]]),gsub("\\.", ",", unname(sapply(BASE[[indicador]], as.character))),rep('', ncol(BASE[[indicador]]))))
 }
 
+# Datos de Línea de Pobreza desde web o tabla OPS
+DATOS_EXTRAIDOS<-TRUE
+LP<-function(ipc_anio,ODS382, datos_ref, son_extraidos = DATOS_EXTRAIDOS, Base_datos_ipc = Base_ipc,PPA_ref = PPA_2017){
+  datos_lp<-if (son_extraidos){
+    c(c(2.15,3.65)*PPA_ref/Base_datos_ipc[Año==2017,Promedio_base_2018_2]*Base_datos_ipc[Año==ipc_anio,Promedio_base_2018_2],ODS382[[4]][1]*0.6)
+  }  else {
+    datos_ref
+  }
+  return(datos_lp)
+}
 
 #### DATO PPA ####
 url_PPA_2017_json<-"http://api.worldbank.org/v2/countries/CHL/indicators/PA.NUS.PRVT.PP?format=json&date=2017"
@@ -128,7 +138,6 @@ Base_ipc_2[, Promedio_base_2008 := rowSums(.SD)/12, .SDcols = 2:13]
 Base_ipc<-merge(Base_ipc_2[, c(1,15)],Base_ipc[,.(.N,Promedio_base_2018=mean(IPC)),by="Año"],all=TRUE)
 Base_ipc[,Promedio_base_2018_2:=ifelse(is.na(Promedio_base_2008),Promedio_base_2018,Base_ipc[Año==2009,Promedio_base_2018/Promedio_base_2008]*Promedio_base_2008)]
 
-
 #### EPV VIII ####
 url_epf8_gastos<-"https://www.ine.gob.cl/docs/default-source/encuesta-de-presupuestos-familiares/bbdd/viii-epf---(junio-2016---julio-2017)/base-gastos-viii-epf-(formato-csv).csv"
 url_epf8_personas<-"https://www.ine.gob.cl/docs/default-source/encuesta-de-presupuestos-familiares/bbdd/viii-epf---(junio-2016---julio-2017)/base-personas-viii-epf-(formato-csv).csv"
@@ -136,11 +145,9 @@ url_epf8_personas<-"https://www.ine.gob.cl/docs/default-source/encuesta-de-presu
 BASE_ODS382_EPF8<-BASE_ODS382_FORMATO(url_epf8_gastos,url_epf8_personas,"FOLIO","GASTOT_HD_AI")
 ODS382_EPF8<-ODS382(BASE_ODS382_EPF8,"NPERSONAS","FE2","FOLIO")
 
-# Según datos OPS
-# LP_EPF8<-c(5458,1729.77,1018.91)
-LP_EPF8<-c(2.15,3.65)*PPA_2017/Base_ipc[Año==2017,Promedio_base_2018_2]*Base_ipc[Año==2016,Promedio_base_2018_2]
-LP_EPF8<-append(LP_EPF8,ODS382_EPF8[[4]][1]*0.6)
-
+# Según datos extraídos u OPS
+LP_EPF8<-LP(2016,ODS382_EPF8,c(1018.91,1729.77,5458))
+  
 EMP_FGT_EPF8<-EMP_FGT(BASE_ODS382_EPF8,"NPERSONAS","FE2",LP_EPF8)
 
 #Respaldo local archivos
@@ -155,9 +162,7 @@ BASE_ODS382_EPF7<-BASE_ODS382_FORMATO(url_epf7_gastos,url_epf7_personas,"FOLIO",
 ODS382_EPF7<-ODS382(BASE_ODS382_EPF7,"NPERSONA","FE2","FOLIO")
 
 # Según datos OPS
-# LP_EPF7<-c(3373,1450.88,854.63)
-LP_EPF7<-c(2.15,3.65)*PPA_2017/Base_ipc[Año==2017,Promedio_base_2018_2]*Base_ipc[Año==2011,Promedio_base_2018_2]
-LP_EPF7<-append(LP_EPF7,ODS382_EPF7[[4]][1]*0.6)
+LP_EPF7<-LP(2011,ODS382_EPF7,c(854.63,1450.88,3373))
 
 EMP_FGT_EPF7<-EMP_FGT(BASE_ODS382_EPF7,"NPERSONA","FE2",LP_EPF7)
 
@@ -195,11 +200,8 @@ BASE_ODS382_EPF6[,GT:=GTsAI+Arriendo_Imputado,by=clave_hogar]
 
 ODS382_EPF6<-ODS382(BASE_ODS382_EPF6,"PersonasXHogar","FE2","clave_hogar")
 
-
 # Según datos OPS
-# LP_EPF6<-c(2737,1205.37,710.01)
-LP_EPF6<-c(2.15,3.65)*PPA_2017/Base_ipc[Año==2017,Promedio_base_2018_2]*Base_ipc[Año==2006,Promedio_base_2018_2]
-LP_EPF6<-append(LP_EPF6,ODS382_EPF6[[4]][1]*0.6)
+LP_EPF6<-LP(2006,ODS382_EPF6,c(710.01,1205.37,2737))
 
 EMP_FGT_EPF6<-EMP_FGT(BASE_ODS382_EPF6,"PersonasXHogar","FE2",LP_EPF6)
 
@@ -241,9 +243,7 @@ BASE_ODS382_EPF5[,GT:=GTsAI+Arriendo_Imputado,by=Numero_hogar]
 ODS382_EPF5<-ODS382(BASE_ODS382_EPF5,"npersonas","FE2","Numero_hogar")
 
 # Según datos OPS
-# LP_EPF5<-c(1339.4,1004.835076,591.8891542)
-LP_EPF5<-c(2.15,3.65)*PPA_2017/Base_ipc[Año==2017,Promedio_base_2018_2]*Base_ipc[Año==1999,Promedio_base_2018_2]
-LP_EPF5<-append(LP_EPF5,ODS382_EPF5[[4]][1]*0.6)
+LP_EPF5<-LP(1999,ODS382_EPF5,c(591.8891542,1004.835076,1339.4))
 
 EMP_FGT_EPF5<-EMP_FGT(BASE_ODS382_EPF5,"npersonas","FE2",LP_EPF5)
 
@@ -316,7 +316,8 @@ TABLA_EXCEL_ODS382_aux<-as.data.frame(rbind(c("Indicadores auxiliares",rep('', n
 
 
 #### Planilla excel ####
-write_xlsx(list("ODS 3.8.2 e indic. relacionados" = TABLA_EXCEL_ODS382, "Indicadores auxiliares" = TABLA_EXCEL_ODS382_aux),"Resultados_ODS382_con_datos_web.xlsx",col_names = FALSE)
+write_xlsx(list("ODS 3.8.2 e indic. relacionados" = TABLA_EXCEL_ODS382, "Indicadores auxiliares" = TABLA_EXCEL_ODS382_aux),"Resultados_ODS382_con_datos_web2.xlsx",col_names = FALSE)
+# write_xlsx(list("ODS 3.8.2 e indic. relacionados" = TABLA_EXCEL_ODS382, "Indicadores auxiliares" = TABLA_EXCEL_ODS382_aux),"Resultados_ODS382_con_LP-OPS.xlsx",col_names = FALSE)
 
 #### Comprimir archivos descargados y limpiar carpeta ####
 file.remove(destfile_EPF6)
