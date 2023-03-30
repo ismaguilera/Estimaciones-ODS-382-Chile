@@ -57,7 +57,7 @@ PROCEDIMIENTO DE RESPALDO Y LIMPIEZA
   
 </pre>
 
-> A. This example's sequence is very thorough! However, we are still assuming certain conditions that our utensils or ingredients already exist. What if we are out of plates? Will we grab a napkin instead to place our sandwich on? What if we are out of jelly? Will you throw the sandwich away or eat it with just peanut butter?
+> Este pseudocódigo busca identificar las acciones de las secuencias y la relación con las funciones utilizadas
 </details>
 
 <details>
