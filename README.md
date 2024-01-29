@@ -12,6 +12,125 @@ ii. Entregar como resultado una planilla Excel [Resultados_ODS382_con_datos_web]
 
 iii. Generar un respaldo de las bases de descargadas en un archivo comprimido llamado [Respaldo_Datos_IPC_EPF5a8.zip](Respaldo_Datos382_IPC_EPF5a8.zip).
 
+<details>
+<summary><b>Pseudocódigo de Estimaciones_ODS_382_via_EPFs_IPC_WB.R</b> </summary>
+<pre>
+INICIALIZAR
+  1. Cargar paquetes de librerías en R: si no están instalados, descargar e instalar
+  2. Cargar programa 7zip para descomprimir archivos a descargar, 
+    si no está instalado en la ruta específica, descargar e instalar el programa 7zip
+  3. Generar funciones para facilitar ejecución:
+    <b>Function 1</b> <i>Evaluar base como porcentaje de la población</i> (Base, poblacion, expresion, condicion)
+    <b>Function 2</b> <i>Construir base según formatos estándares</i> (url_gastos, url_personas, hogar, gasto)
+    <b>Function 3</b> <i>Estimar indicadores ODS 3.8.2</i> (Base, npersonas, factor_expansion, hogar)
+    <b>Function 4</b> <i>Evaluar fórmula de medición de pobreza según Líneas de pobreza</i> (Base, npersonas, factor_expansion)
+    <b>Function 5</b> <i>Estimar indicadores de empobrecimiento ODS 3.8.2</i> (Base, npersonas, factor_expansion, Linea_Pobreza)
+    <b>Function 6</b> <i>Ajustar formatos de tablas de datos a planilla Excel con resultados</i> (Base, indicador)
+    <b>Function 7</b> <i>Establecer líneas de Pobreza</i> (ipc_anio,Base_ODS, datos_OMS, son_extraidos, Base_datos_ipc, PPA_ref)
+                      <b>if</b> (son_extraidos) <b>then</b> <i>usa datos online de PPA e IPC</i>
+                      <b>else</b> <i>usa datos OPS</i> <b>end if</b>
+  4. Extraer datos online:
+    a) <i>Paridad de Poder Adquisitivo (PPA) desde sitio del Banco Mundial</i>
+    b) <i>IPC desde sitio INE</i>
+<br>
+ALGORITMO ESTIMACIÓN PARA EPF 5 hasta 8
+  1. <i>Descargar cada base según URL oficial en INE</i>
+  2. Si (EPF == 7 | EPF == 8) ejecutar F2(), <i>sino construir base ad hoc</i>
+  3. Ejecutar F3()
+  4. Ejecutar F7()
+  5. Ejecutar F5()
+  6. <i>Guardar bases en carpeta</i> Datos
+
+<br>
+ALGORITMO ENTREGA DE COMPENDIO DE RESULTADOS ODS 3.8.2
+  1. <i>Construir compendio de resultados de las estimaciones</i> F3() por cada EPF
+  2. <i>Construir tabla de datos ODS 3.8.2</i> ejecutando F6()
+  3. <i>Construir compendio de resultados</i> de las estimaciones F4() por cada EPF
+  4. <i>Construir tabla de datos ODS 3.8.2 auxiliares</i> ejecutando F6()
+  5. <i>Guardar planilla con tablas de datos ODS 3.8.2 y auxiliares</i>
+<br>
+PROCEDIMIENTO DE RESPALDO Y LIMPIEZA
+  1. <i>Eliminar archivos comprimidos</i>
+  2. <i>Comprimir bases en carpeta Datos</i>
+  3. <i>Eliminar carpeta Datos</i>
+  
+  
+</pre>
+
+> Este pseudocódigo busca identificar las acciones de las secuencias y la relación con las funciones utilizadas
+</details>
+
+<details>
+    <summary><b>Nombres de bases de datos y de variables utilizadas</b></summary>
+		<table>
+			<tr>
+			<td>	<b>Bases y Variables</b>	</td>
+			<td>	<b>EPF V</b> 	</td>
+			<td>	<b>EPF VI</b>	</td>
+			<td>	<b>EPF VII</b>	</td>
+			<td>	<b>EPF VIII</b>	</td>
+			</tr>
+			<tr>
+			<td>	Base Personas (BP)	</td>
+			<td>	Personas.csv	</td>
+			<td>	Ingreso_Qing_Hogares_Nacional_Real.csv	</td>
+			<td>	base-personas-vii-epf-(formato-csv).csv	</td>
+			<td>	base-personas-viii-epf-(formato-csv).csv	</td>
+			</tr>
+			<tr>
+			<td>	Base Gasto (BG)	</td>
+			<td>	Gasto.csv	</td>
+			<td>	Gasto_QIng_Nacional_Real.csv	</td>
+			<td>	base-gastos-vii-epf-(formato-csv).csv	</td>
+			<td>	base-gastos-viii-epf-(formato-csv).csv	</td>
+			</tr>
+			<tr>
+			<td>	Base Factor Expansión (BFE)	</td>
+			<td>	Factor_expansion.csv	</td>
+			<td>		</td>
+			<td>		</td>
+			<td>		</td>
+			</tr>
+			<tr>
+			<td>	Identificador hogar	</td>
+			<td>	Codigo_hogar en BG y Numero_hogar en BP	</td>
+			<td>	Clave_hogar en BP y clave_hogar en BG	</td>
+			<td>	FOLIO en BP y BG	</td>
+			<td>	FOLIO en BP y BG	</td>
+			</tr>
+			<tr>
+			<td>	Número de personas	</td>
+			<td>	Número de filas por Numero_hogar en BP	</td>
+			<td>	PersonasXHogar en BP	</td>
+			<td>	NPERSONA en BP	</td>
+			<td>	NPERSONAS en BP	</td>
+			</tr>
+			<tr>
+			<td>	Factor de expansión	</td>
+			<td>	Factor_expansion_año en BFE	</td>
+			<td>	Factor_Expansion_Anual en BP	</td>
+			<td>	FE en BP	</td>
+			<td>	FE en BP	</td>
+			</tr>
+			<tr>
+			<td>	Consumo del hogar	</td>
+			<td>	Gasto en BG + Arriendo_imputado_vivienda en BP	</td>
+			<td>	Gasto_Real en BG + Arriendo_Imputado en BP	</td>
+			<td>	GASTOT_FNR_AI en BP	</td>
+			<td>	GASTOT_HD_AI en BP	</td>
+			</tr>
+			<tr>
+			<td>	Gastos en salud	</td>
+			<td>	Gasto si Codigo_producto comienza con 5 en BG	</td>
+			<td>	Gasto_Real si CodP01=="5000" en BG	</td>
+			<td>	Gasto si [D=="6"] en BG	</td>
+			<td>	Gasto si [D=="6"] en BG	</td>
+			</tr>
+		</table>
+</details>
+
+
+
 Por otra parte, el segundo archivo, [Validacion_de_Bases...](Validacion_de_Bases_y_Estimaciones_con_resultados_EPFs.R), ejecuta el primer archivo y con las tablas de datos en el entorno de desarrollo se realizan las validaciones según los datos publicados en los informes de [cada EPF](https://www.ine.gob.cl/estadisticas/sociales/ingresos-y-gastos/encuesta-de-presupuestos-familiares).
 
 ## Instalación
