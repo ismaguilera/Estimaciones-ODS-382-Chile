@@ -69,6 +69,7 @@ PROCEDIMIENTO DE RESPALDO Y LIMPIEZA
 			<td>	<b>EPF VI</b>	</td>
 			<td>	<b>EPF VII</b>	</td>
 			<td>	<b>EPF VIII</b>	</td>
+			<td>	<b>EPF IX</b>	</td>
 			</tr>
 			<tr>
 			<td>	Base Personas (BP)	</td>
@@ -76,6 +77,7 @@ PROCEDIMIENTO DE RESPALDO Y LIMPIEZA
 			<td>	Ingreso_Qing_Hogares_Nacional_Real.csv	</td>
 			<td>	base-personas-vii-epf-(formato-csv).csv	</td>
 			<td>	base-personas-viii-epf-(formato-csv).csv	</td>
+			<td>	base-personas-ix-epf-(formato-csv).csv	</td>
 			</tr>
 			<tr>
 			<td>	Base Gasto (BG)	</td>
@@ -83,10 +85,12 @@ PROCEDIMIENTO DE RESPALDO Y LIMPIEZA
 			<td>	Gasto_QIng_Nacional_Real.csv	</td>
 			<td>	base-gastos-vii-epf-(formato-csv).csv	</td>
 			<td>	base-gastos-viii-epf-(formato-csv).csv	</td>
+			<td>	base-gastos-ix-epf-(formato-csv).csv	</td>
 			</tr>
 			<tr>
 			<td>	Base Factor Expansión (BFE)	</td>
 			<td>	Factor_expansion.csv	</td>
+			<td>		</td>
 			<td>		</td>
 			<td>		</td>
 			<td>		</td>
@@ -97,6 +101,7 @@ PROCEDIMIENTO DE RESPALDO Y LIMPIEZA
 			<td>	Clave_hogar en BP y clave_hogar en BG	</td>
 			<td>	FOLIO en BP y BG	</td>
 			<td>	FOLIO en BP y BG	</td>
+			<td>	folio en BP y BG	</td>
 			</tr>
 			<tr>
 			<td>	Número de personas	</td>
@@ -104,6 +109,7 @@ PROCEDIMIENTO DE RESPALDO Y LIMPIEZA
 			<td>	PersonasXHogar en BP	</td>
 			<td>	NPERSONA en BP	</td>
 			<td>	NPERSONAS en BP	</td>
+			<td>	npersonas en BP	</td>
 			</tr>
 			<tr>
 			<td>	Factor de expansión	</td>
@@ -111,6 +117,7 @@ PROCEDIMIENTO DE RESPALDO Y LIMPIEZA
 			<td>	Factor_Expansion_Anual en BP	</td>
 			<td>	FE en BP	</td>
 			<td>	FE en BP	</td>
+			<td>	fe en BP	</td>
 			</tr>
 			<tr>
 			<td>	Consumo del hogar	</td>
@@ -118,6 +125,7 @@ PROCEDIMIENTO DE RESPALDO Y LIMPIEZA
 			<td>	Gasto_Real en BG + Arriendo_Imputado en BP	</td>
 			<td>	GASTOT_FNR_AI en BP	</td>
 			<td>	GASTOT_HD_AI en BP	</td>
+			<td>	gatot_hd_ai en BP	</td>
 			</tr>
 			<tr>
 			<td>	Gastos en salud	</td>
@@ -125,6 +133,7 @@ PROCEDIMIENTO DE RESPALDO Y LIMPIEZA
 			<td>	Gasto_Real si CodP01=="5000" en BG	</td>
 			<td>	Gasto si [D=="6"] en BG	</td>
 			<td>	Gasto si [D=="6"] en BG	</td>
+			<td>	gasto si [D=="6"] en BG	</td>
 			</tr>
 		</table>
 </details>
