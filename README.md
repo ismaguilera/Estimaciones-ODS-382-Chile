@@ -1,6 +1,6 @@
-# Estimaciones del indicador ODS 3.8.2 Chile 1997 a 2017
+# Estimaciones del indicador ODS 3.8.2 Chile 1997 a 2021
 
-Este proyecto realiza las estimaciones de los indicadores de los Objetivos de Desarrollo Sustentable (ODS) 3.8.2 de Chile para los años 2000, 2006, 2011 y 2016 mediante lenguaje de programación R, tomando como fuente de información directamente las bases de datos disponibles en la web de: las [Encuestas de Presupuestos Familiares (EPF)](https://www.ine.gob.cl/estadisticas/sociales/ingresos-y-gastos/encuesta-de-presupuestos-familiares) desde su versión V a las VIII, los [Índices de Precios al Consumidor (IPC)](https://www.ine.gob.cl/estadisticas/economia/indices-de-precio-e-inflacion/indice-de-precios-al-consumidor) y la estimación de [Paridad del Poder Adquisitivo (PPA)](https://data.worldbank.org/indicator/PA.NUS.PRVT.PP?locations=CL) publicadas por el Banco Mundial acorde al ciclo 2017 del [Programa de Comparación Internacional (ICP)](https://www.worldbank.org/en/programs/icp).
+Este proyecto realiza las estimaciones de los indicadores de los Objetivos de Desarrollo Sustentable (ODS) 3.8.2 de Chile para los años 2000, 2006, 2011, 2016 y, recientemente, 2021 mediante lenguaje de programación R, tomando como fuente de información directamente las bases de datos disponibles en la web de: las [Encuestas de Presupuestos Familiares (EPF)](https://www.ine.gob.cl/estadisticas/sociales/ingresos-y-gastos/encuesta-de-presupuestos-familiares) desde su versión V a las IX, los [Índices de Precios al Consumidor (IPC)](https://www.ine.gob.cl/estadisticas/economia/indices-de-precio-e-inflacion/indice-de-precios-al-consumidor) y la estimación de [Paridad del Poder Adquisitivo (PPA)](https://data.worldbank.org/indicator/PA.NUS.PRVT.PP?locations=CL) publicadas por el Banco Mundial acorde al ciclo 2017 del [Programa de Comparación Internacional (ICP)](https://www.worldbank.org/en/programs/icp).
 
 ## Descripción
 
@@ -33,9 +33,9 @@ INICIALIZAR
     a) <i>Paridad de Poder Adquisitivo (PPA) desde sitio del Banco Mundial</i>
     b) <i>IPC desde sitio INE</i>
 <br>
-ALGORITMO ESTIMACIÓN PARA EPF 5 hasta 8
+ALGORITMO ESTIMACIÓN PARA EPF 5 hasta 9
   1. <i>Descargar cada base según URL oficial en INE</i>
-  2. Si (EPF == 7 | EPF == 8) ejecutar F2(), <i>sino construir base ad hoc</i>
+  2. Si (EPF == 7 | EPF == 8 | EPF == 9) ejecutar F2(), <i>sino construir base ad hoc</i>
   3. Ejecutar F3()
   4. Ejecutar F7()
   5. Ejecutar F5()
@@ -149,10 +149,10 @@ Este proyecto entrega las siguientes estimaciones de los ODS 3.8.2 para Chile.
 
 **Tabla 1: Proporción de la población nacional con grandes gastos sanitarios (ODS 3.8.2)**
 
-| Umbrales                                                                     | 1997  | 2007  |  2012  |  2017  |
-|------------------------------------------------------------------------------|:-----:|:-----:|:------:|:------:|
-| Gastos en salud mayores al 10% del total de gastos o ingresos de los hogares | 8,98% | 9,38% | 11,33% | 14,61% |
-| Gastos en salud mayores al 25% del total de gastos o ingresos de los hogares | 1,49% | 1,93% | 2,10%  | 2,09%  |
+| Umbrales                                                                     | 1997  | 2007  |  2012  |  2017  |  2021  |
+|------------------------------------------------------------------------------|:-----:|:-----:|:------:|:------:|:------:|
+| Gastos en salud mayores al 10% del total de gastos o ingresos de los hogares | 8,98% | 9,38% | 11,33% | 14,61% | 14,75% |
+| Gastos en salud mayores al 25% del total de gastos o ingresos de los hogares | 1,49% | 1,93% | 2,10%  | 2,09%  |2,67%  |
 
 Fuente: Elaboración propia
 
