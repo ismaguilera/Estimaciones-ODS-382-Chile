@@ -158,7 +158,7 @@ Este proyecto entrega las siguientes estimaciones de los ODS 3.8.2 para Chile.
 
 **Tabla 1: Proporción de la población nacional con grandes gastos sanitarios (ODS 3.8.2)**
 
-| Umbrales                                                                     | 1997  | 2007  |  2012  |  2017  |  2021  |
+| Umbrales                                                                     | 1997  | 2007  |  2012  |  2017  |  2022  |
 |------------------------------------------------------------------------------|:-----:|:-----:|:------:|:------:|:------:|
 | Gastos en salud mayores al 10% del total de gastos o ingresos de los hogares | 8,98% | 9,38% | 11,33% | 14,61% | 17,75% |
 | Gastos en salud mayores al 25% del total de gastos o ingresos de los hogares | 1,49% | 1,93% | 2,10%  | 2,09%  |2,67%  |
