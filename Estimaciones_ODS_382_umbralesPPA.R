@@ -2,7 +2,7 @@
 #   Ismael Aguilera
 #   Profesional Depto. Economía de la Salud, DIPLAS, SSP, Minsal
 #   Consultas a: ismael.aguilera@minsal.cl o al anexo: 240484
-#   Última actualización: 15/Junio/2025
+#   Última actualización: 11/Julio/2025
 
 #### Paquetes ####
 list_of_packages <- c("data.table","dplyr", "scales", "readxl", "writexl","laeken","jsonlite","installr")
@@ -174,27 +174,27 @@ Umbrales<-data.table(EPF=c(5:9),PPA_215=PPP2024[Year %in% c(1996,2006,2011,2016,
 
 BASE_ODS382_EPF9[,gs_pc:=GS/NPERSONAS*12/365.25]
 BASE_ODS382_EPF9[,gtot_pc:=GT/NPERSONAS*12/365.25]
-EPF9_u_115<-BASE_ODS382_EPF9[,0.5*weightedMedian(gtot_pc-gs_pc,FE2)]+Umbrales[EPF==9,PPA_115]
+EPF9_u_115<-BASE_ODS382_EPF9[,0.5*weightedMedian(gtot_pc-gs_pc,FE2*NPERSONAS)]+Umbrales[EPF==9,PPA_115]
 BASE_ODS382_EPF9[,umbral:=ifelse(gs_pc>0.4*(gtot_pc-EPF9_u_115)&gs_pc>0,1,0)]
 
 BASE_ODS382_EPF8[,gs_pc:=GS/NPERSONAS*12/365.25]
 BASE_ODS382_EPF8[,gtot_pc:=GT/NPERSONAS*12/365.25]
-EPF8_u_115<-BASE_ODS382_EPF8[,0.5*weightedMedian(gtot_pc-gs_pc,FE2)]+Umbrales[EPF==8,PPA_115]
+EPF8_u_115<-BASE_ODS382_EPF8[,0.5*weightedMedian(gtot_pc-gs_pc,FE2*NPERSONAS)]+Umbrales[EPF==8,PPA_115]
 BASE_ODS382_EPF8[,umbral:=ifelse(gs_pc>0.4*(gtot_pc-EPF8_u_115)&gs_pc>0,1,0)]
 
 BASE_ODS382_EPF7[,gs_pc:=GS/NPERSONA*12/365.25]
 BASE_ODS382_EPF7[,gtot_pc:=GT/NPERSONA*12/365.25]
-EPF7_u_115<-BASE_ODS382_EPF7[,0.5*weightedMedian(gtot_pc-gs_pc,FE2)]+Umbrales[EPF==7,PPA_115]
+EPF7_u_115<-BASE_ODS382_EPF7[,0.5*weightedMedian(gtot_pc-gs_pc,FE2*NPERSONA)]+Umbrales[EPF==7,PPA_115]
 BASE_ODS382_EPF7[,umbral:=ifelse(gs_pc>0.4*(gtot_pc-EPF7_u_115)&gs_pc>0,1,0)]
 
 BASE_ODS382_EPF6[,gs_pc:=GS/PersonasXHogar*12/365.25]
 BASE_ODS382_EPF6[,gtot_pc:=GT/PersonasXHogar*12/365.25]
-EPF6_u_115<-BASE_ODS382_EPF6[,0.5*weightedMedian(gtot_pc-gs_pc,FE2)]+Umbrales[EPF==6,PPA_115]
+EPF6_u_115<-BASE_ODS382_EPF6[,0.5*weightedMedian(gtot_pc-gs_pc,FE2*PersonasXHogar)]+Umbrales[EPF==6,PPA_115]
 BASE_ODS382_EPF6[,umbral:=ifelse(gs_pc>0.4*(gtot_pc-EPF6_u_115)&gs_pc>0,1,0)]
 
 BASE_ODS382_EPF5[,gs_pc:=GS/npersonas*12/365.25]
 BASE_ODS382_EPF5[,gtot_pc:=GT/npersonas*12/365.25]
-EPF5_u_115<-BASE_ODS382_EPF5[,0.5*weightedMedian(gtot_pc-gs_pc,FE2)]+Umbrales[EPF==5,PPA_115]
+EPF5_u_115<-BASE_ODS382_EPF5[,0.5*weightedMedian(gtot_pc-gs_pc,FE2*npersonas)]+Umbrales[EPF==5,PPA_115]
 BASE_ODS382_EPF5[,umbral:=ifelse(gs_pc>0.4*(gtot_pc-EPF5_u_115)&gs_pc>0,1,0)]
 
 
@@ -631,79 +631,84 @@ new_ODS382<-data.table(version=character(),U_Nac=numeric(),U_C1=numeric(),U_C2=n
                        Q1=numeric(),Q2=numeric(),Q3=numeric(),Q4=numeric(),Q5=numeric(),
                        solo_adultos=numeric(),solo_adultos_y_nna=numeric(),multigeneracional=numeric(),solo_adultos_y_mayores=numeric(),solo_adultosmayores=numeric(),
                        Jefe_H=numeric(),Jefe_M=numeric(),Jefe_60menos=numeric(),Jefe_60mas=numeric())
-new_ODS382<-rbind(new_ODS382,append(append(list("EPF5",BASE_ODS382_EPF5[umbral>0,sum(npersonas*FE2)]/BASE_ODS382_EPF5[,sum(npersonas*FE2)],
-                                                BASE_ODS382_EPF5[umbral>0&(gtot_pc>EPF5_u_115)&gs_pc>0,sum(npersonas*FE2)]/BASE_ODS382_EPF5[,sum(npersonas*FE2)],
-                                                BASE_ODS382_EPF5[umbral>0&(gtot_pc<EPF5_u_115)&gs_pc>0,sum(npersonas*FE2)]/BASE_ODS382_EPF5[,sum(npersonas*FE2)]),
+new_ODS382<-rbind(new_ODS382,append(append(list("EPF5",
+                                                BASE_ODS382_EPF5[,weightedMean((umbral>0)*1,npersonas*FE2)],
+                                                BASE_ODS382_EPF5[,weightedMean((umbral>0&(gtot_pc>EPF5_u_115)&gs_pc>0)*1,npersonas*FE2)],
+                                                BASE_ODS382_EPF5[,weightedMean((umbral>0&(gtot_pc<EPF5_u_115)&gs_pc>0)*1,npersonas*FE2)]),
                                            EPF5_QUIN[[4]]),
-                                    list(BASE_ODS382_EPF5_THOGAR[umbral>0&solo_adultos>0,sum(npersonas*FE2)]/BASE_ODS382_EPF5_THOGAR[solo_adultos>0,sum(npersonas*FE2)],
-                                         BASE_ODS382_EPF5_THOGAR[umbral>0&solo_adultos_y_nna>0,sum(npersonas*FE2)]/BASE_ODS382_EPF5_THOGAR[solo_adultos_y_nna>0,sum(npersonas*FE2)],
-                                         BASE_ODS382_EPF5_THOGAR[umbral>0&multigeneracional>0,sum(npersonas*FE2)]/BASE_ODS382_EPF5_THOGAR[multigeneracional>0,sum(npersonas*FE2)],
-                                         BASE_ODS382_EPF5_THOGAR[umbral>0&solo_adultos_y_mayores>0,sum(npersonas*FE2)]/BASE_ODS382_EPF5_THOGAR[solo_adultos_y_mayores>0,sum(npersonas*FE2)],
-                                         BASE_ODS382_EPF5_THOGAR[umbral>0&solo_adultosmayores>0,sum(npersonas*FE2)]/BASE_ODS382_EPF5_THOGAR[solo_adultosmayores>0,sum(npersonas*FE2)],
-                                         BASE_ODS382_EPF5_SEX[umbral>0&Sexo==1,sum(npersonas*FE2)]/BASE_ODS382_EPF5_SEX[Sexo==1,sum(npersonas*FE2)],
-                                         BASE_ODS382_EPF5_SEX[umbral>0&Sexo==2,sum(npersonas*FE2)]/BASE_ODS382_EPF5_SEX[Sexo==2,sum(npersonas*FE2)],
-                                         BASE_ODS382_EPF5_SEX[umbral>0&Grupo_edad<13,sum(npersonas*FE2)]/BASE_ODS382_EPF5_SEX[Grupo_edad<13,sum(npersonas*FE2)],
-                                         BASE_ODS382_EPF5_SEX[umbral>0&Grupo_edad>=13,sum(npersonas*FE2)]/BASE_ODS382_EPF5_SEX[Grupo_edad>=13,sum(npersonas*FE2)])
+                                    list(BASE_ODS382_EPF5_THOGAR[solo_adultos>0,weightedMean((umbral>0)*1,npersonas*FE2)],
+                                         BASE_ODS382_EPF5_THOGAR[solo_adultos_y_nna>0,weightedMean((umbral>0)*1,npersonas*FE2)],
+                                         BASE_ODS382_EPF5_THOGAR[multigeneracional>0,weightedMean((umbral>0)*1,npersonas*FE2)],
+                                         BASE_ODS382_EPF5_THOGAR[solo_adultos_y_mayores>0,weightedMean((umbral>0)*1,npersonas*FE2)],
+                                         BASE_ODS382_EPF5_THOGAR[solo_adultosmayores>0,weightedMean((umbral>0)*1,npersonas*FE2)],
+                                         BASE_ODS382_EPF5_SEX[Sexo==1,weightedMean((umbral>0)*1,npersonas*FE2)],
+                                         BASE_ODS382_EPF5_SEX[Sexo==2,weightedMean((umbral>0)*1,npersonas*FE2)],
+                                         BASE_ODS382_EPF5_SEX[Grupo_edad<13,weightedMean((umbral>0)*1,npersonas*FE2)],
+                                         BASE_ODS382_EPF5_SEX[Grupo_edad>=13,weightedMean((umbral>0)*1,npersonas*FE2)])
 )
 )
-new_ODS382<-rbind(new_ODS382,append(append(list("EPF6",BASE_ODS382_EPF6[umbral>0,sum(PersonasXHogar*FE2)]/BASE_ODS382_EPF6[,sum(PersonasXHogar*FE2)],
-                                                BASE_ODS382_EPF6[umbral>0&(gtot_pc>EPF6_u_115)&gs_pc>0,sum(PersonasXHogar*FE2)]/BASE_ODS382_EPF6[,sum(PersonasXHogar*FE2)],
-                                                BASE_ODS382_EPF6[umbral>0&(gtot_pc<EPF6_u_115)&gs_pc>0,sum(PersonasXHogar*FE2)]/BASE_ODS382_EPF6[,sum(PersonasXHogar*FE2)]),
+new_ODS382<-rbind(new_ODS382,append(append(list("EPF6",
+                                                BASE_ODS382_EPF6[,weightedMean((umbral>0)*1,PersonasXHogar)],
+                                                BASE_ODS382_EPF6[,weightedMean((umbral>0&(gtot_pc>EPF6_u_115)&gs_pc>0)*1,PersonasXHogar)],
+                                                BASE_ODS382_EPF6[,weightedMean((umbral>0&(gtot_pc<EPF6_u_115)&gs_pc>0)*1,PersonasXHogar)]),
                                            EPF6_QUIN[[4]]),
-                                    list(BASE_ODS382_EPF6_THOGAR[umbral>0&solo_adultos>0,sum(PersonasXHogar*FE2)]/BASE_ODS382_EPF6_THOGAR[solo_adultos>0,sum(PersonasXHogar*FE2)],
-                                         BASE_ODS382_EPF6_THOGAR[umbral>0&solo_adultos_y_nna>0,sum(PersonasXHogar*FE2)]/BASE_ODS382_EPF6_THOGAR[solo_adultos_y_nna>0,sum(PersonasXHogar*FE2)],
-                                         BASE_ODS382_EPF6_THOGAR[umbral>0&multigeneracional>0,sum(PersonasXHogar*FE2)]/BASE_ODS382_EPF6_THOGAR[multigeneracional>0,sum(PersonasXHogar*FE2)],
-                                         BASE_ODS382_EPF6_THOGAR[umbral>0&solo_adultos_y_mayores>0,sum(PersonasXHogar*FE2)]/BASE_ODS382_EPF6_THOGAR[solo_adultos_y_mayores>0,sum(PersonasXHogar*FE2)],
-                                         BASE_ODS382_EPF6_THOGAR[umbral>0&solo_adultosmayores>0,sum(PersonasXHogar*FE2)]/BASE_ODS382_EPF6_THOGAR[solo_adultosmayores>0,sum(PersonasXHogar*FE2)],
-                                         BASE_ODS382_EPF6_SEX[umbral>0&Sexo==1,sum(PersonasXHogar*FE2)]/BASE_ODS382_EPF6_SEX[Sexo==1,sum(PersonasXHogar*FE2)],
-                                         BASE_ODS382_EPF6_SEX[umbral>0&Sexo==2,sum(PersonasXHogar*FE2)]/BASE_ODS382_EPF6_SEX[Sexo==2,sum(PersonasXHogar*FE2)],
-                                         BASE_ODS382_EPF6_SEX[umbral>0&Grupo_edad<13,sum(PersonasXHogar*FE2)]/BASE_ODS382_EPF6_SEX[Grupo_edad<13,sum(PersonasXHogar*FE2)],
-                                         BASE_ODS382_EPF6_SEX[umbral>0&Grupo_edad>=13,sum(PersonasXHogar*FE2)]/BASE_ODS382_EPF6_SEX[Grupo_edad>=13,sum(PersonasXHogar*FE2)])
+                                    list(BASE_ODS382_EPF6_THOGAR[solo_adultos>0,weightedMean((umbral>0)*1,PersonasXHogar*FE2)],
+                                         BASE_ODS382_EPF6_THOGAR[solo_adultos_y_nna>0,weightedMean((umbral>0)*1,PersonasXHogar*FE2)],
+                                         BASE_ODS382_EPF6_THOGAR[multigeneracional>0,weightedMean((umbral>0)*1,PersonasXHogar*FE2)],
+                                         BASE_ODS382_EPF6_THOGAR[solo_adultos_y_mayores>0,weightedMean((umbral>0)*1,PersonasXHogar*FE2)],
+                                         BASE_ODS382_EPF6_THOGAR[solo_adultosmayores>0,weightedMean((umbral>0)*1,PersonasXHogar*FE2)],
+                                         BASE_ODS382_EPF6_SEX[Sexo==1,weightedMean((umbral>0)*1,PersonasXHogar*FE2)],
+                                         BASE_ODS382_EPF6_SEX[Sexo==2,weightedMean((umbral>0)*1,PersonasXHogar*FE2)],
+                                         BASE_ODS382_EPF6_SEX[Grupo_edad<13,weightedMean((umbral>0)*1,PersonasXHogar*FE2)],
+                                         BASE_ODS382_EPF6_SEX[Grupo_edad>=13,weightedMean((umbral>0)*1,PersonasXHogar*FE2)])
 )
 )
-new_ODS382<-rbind(new_ODS382,append(append(list("EPF7",BASE_ODS382_EPF7[umbral>0,sum(NPERSONA*FE2)]/BASE_ODS382_EPF7[,sum(NPERSONA*FE2)],
-                                                BASE_ODS382_EPF7[umbral>0&(gtot_pc>EPF7_u_115)&gs_pc>0,sum(NPERSONA*FE2)]/BASE_ODS382_EPF7[,sum(NPERSONA*FE2)],
-                                                BASE_ODS382_EPF7[umbral>0&(gtot_pc<EPF7_u_115)&gs_pc>0,sum(NPERSONA*FE2)]/BASE_ODS382_EPF7[,sum(NPERSONA*FE2)]),
+new_ODS382<-rbind(new_ODS382,append(append(list("EPF7",
+                                                BASE_ODS382_EPF7[,weightedMean((umbral>0)*1,NPERSONA*FE2)],
+                                                BASE_ODS382_EPF7[,weightedMean((umbral>0&(gtot_pc>EPF7_u_115)&gs_pc>0)*1,NPERSONA*FE2)],
+                                                BASE_ODS382_EPF7[,weightedMean((umbral>0&(gtot_pc<EPF7_u_115)&gs_pc>0)*1,NPERSONA*FE2)]),
                                            EPF7_QUIN[[4]]),
-                                    list(BASE_ODS382_EPF7_THOGAR[umbral>0&solo_adultos>0,sum(NPERSONA*FE2)]/BASE_ODS382_EPF7_THOGAR[solo_adultos>0,sum(NPERSONA*FE2)],
-                                         BASE_ODS382_EPF7_THOGAR[umbral>0&solo_adultos_y_nna>0,sum(NPERSONA*FE2)]/BASE_ODS382_EPF7_THOGAR[solo_adultos_y_nna>0,sum(NPERSONA*FE2)],
-                                         BASE_ODS382_EPF7_THOGAR[umbral>0&multigeneracional>0,sum(NPERSONA*FE2)]/BASE_ODS382_EPF7_THOGAR[multigeneracional>0,sum(NPERSONA*FE2)],
-                                         BASE_ODS382_EPF7_THOGAR[umbral>0&solo_adultos_y_mayores>0,sum(NPERSONA*FE2)]/BASE_ODS382_EPF7_THOGAR[solo_adultos_y_mayores>0,sum(NPERSONA*FE2)],
-                                         BASE_ODS382_EPF7_THOGAR[umbral>0&solo_adultosmayores>0,sum(NPERSONA*FE2)]/BASE_ODS382_EPF7_THOGAR[solo_adultosmayores>0,sum(NPERSONA*FE2)],
-                                         BASE_ODS382_EPF7[umbral>0&SEXO==1,sum(NPERSONA*FE2)]/BASE_ODS382_EPF7[SEXO==1,sum(NPERSONA*FE2)],
-                                         BASE_ODS382_EPF7[umbral>0&SEXO==2,sum(NPERSONA*FE2)]/BASE_ODS382_EPF7[SEXO==2,sum(NPERSONA*FE2)],
-                                         BASE_ODS382_EPF7[umbral>0&EDAD<60,sum(NPERSONA*FE2)]/BASE_ODS382_EPF7[EDAD<60,sum(NPERSONA*FE2)],
-                                         BASE_ODS382_EPF7[umbral>0&EDAD>=60,sum(NPERSONA*FE2)]/BASE_ODS382_EPF7[EDAD>=60,sum(NPERSONA*FE2)])
+                                    list(BASE_ODS382_EPF7_THOGAR[solo_adultos>0,weightedMean((umbral>0)*1,NPERSONA*FE2)],
+                                         BASE_ODS382_EPF7_THOGAR[solo_adultos_y_nna>0,weightedMean((umbral>0)*1,NPERSONA*FE2)],
+                                         BASE_ODS382_EPF7_THOGAR[multigeneracional>0,weightedMean((umbral>0)*1,NPERSONA*FE2)],
+                                         BASE_ODS382_EPF7_THOGAR[solo_adultos_y_mayores>0,weightedMean((umbral>0)*1,NPERSONA*FE2)],
+                                         BASE_ODS382_EPF7_THOGAR[solo_adultosmayores>0,weightedMean((umbral>0)*1,NPERSONA*FE2)],
+                                         BASE_ODS382_EPF7[SEXO==1,weightedMean((umbral>0)*1,NPERSONA*FE2)],
+                                         BASE_ODS382_EPF7[SEXO==2,weightedMean((umbral>0)*1,NPERSONA*FE2)],
+                                         BASE_ODS382_EPF7[EDAD<60,weightedMean((umbral>0)*1,NPERSONA*FE2)],
+                                         BASE_ODS382_EPF7[EDAD>=60,weightedMean((umbral>0)*1,NPERSONA*FE2)])
 )
 )
-new_ODS382<-rbind(new_ODS382,append(append(list("EPF8",BASE_ODS382_EPF8[umbral>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF8[,sum(NPERSONAS*FE2)],
-                                                BASE_ODS382_EPF8[umbral>0&(gtot_pc>EPF8_u_115)&gs_pc>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF8[,sum(NPERSONAS*FE2)],
-                                                BASE_ODS382_EPF8[umbral>0&(gtot_pc<EPF8_u_115)&gs_pc>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF8[,sum(NPERSONAS*FE2)]),
+new_ODS382<-rbind(new_ODS382,append(append(list("EPF8",
+                                                BASE_ODS382_EPF8[,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                                BASE_ODS382_EPF8[,weightedMean((umbral>0&(gtot_pc>EPF8_u_115)&gs_pc>0)*1,NPERSONAS*FE2)],
+                                                BASE_ODS382_EPF8[,weightedMean((umbral>0&(gtot_pc<EPF8_u_115)&gs_pc>0)*1,NPERSONAS*FE2)]),
                                            EPF8_QUIN[[4]]),
-                                    list(BASE_ODS382_EPF8_THOGAR[umbral>0&solo_adultos>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF8_THOGAR[solo_adultos>0,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF8_THOGAR[umbral>0&solo_adultos_y_nna>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF8_THOGAR[solo_adultos_y_nna>0,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF8_THOGAR[umbral>0&multigeneracional>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF8_THOGAR[multigeneracional>0,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF8_THOGAR[umbral>0&solo_adultos_y_mayores>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF8_THOGAR[solo_adultos_y_mayores>0,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF8_THOGAR[umbral>0&solo_adultosmayores>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF8_THOGAR[solo_adultosmayores>0,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF8[umbral>0&SEXO==1,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF8[SEXO==1,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF8[umbral>0&SEXO==2,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF8[SEXO==2,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF8[umbral>0&EDAD<60,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF8[EDAD<60,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF8[umbral>0&EDAD>=60,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF8[EDAD>=60,sum(NPERSONAS*FE2)])
+                                    list(BASE_ODS382_EPF8_THOGAR[solo_adultos>0,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF8_THOGAR[solo_adultos_y_nna>0,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF8_THOGAR[multigeneracional>0,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF8_THOGAR[solo_adultos_y_mayores>0,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF8_THOGAR[solo_adultosmayores>0,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF8[SEXO==1,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF8[SEXO==2,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF8[EDAD<60,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF8[EDAD>=60,weightedMean((umbral>0)*1,NPERSONAS*FE2)])
 )
 )
-new_ODS382<-rbind(new_ODS382,append(append(list("EPF9",BASE_ODS382_EPF9[umbral>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF9[,sum(NPERSONAS*FE2)],
-                                                BASE_ODS382_EPF9[umbral>0&(gtot_pc>EPF9_u_115)&gs_pc>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF9[,sum(NPERSONAS*FE2)],
-                                                BASE_ODS382_EPF9[umbral>0&(gtot_pc<EPF9_u_115)&gs_pc>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF9[,sum(NPERSONAS*FE2)]),
+
+new_ODS382<-rbind(new_ODS382,append(append(list("EPF9",BASE_ODS382_EPF9[,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                                BASE_ODS382_EPF9[,weightedMean((umbral>0&(gtot_pc>EPF9_u_115)&gs_pc>0)*1,NPERSONAS*FE2)],
+                                                BASE_ODS382_EPF9[,weightedMean((umbral>0&(gtot_pc<EPF9_u_115)&gs_pc>0)*1,NPERSONAS*FE2)]),
                                            EPF9_QUIN[[4]]),
-                                    list(BASE_ODS382_EPF9_THOGAR[umbral>0&solo_adultos>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF9_THOGAR[solo_adultos>0,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF9_THOGAR[umbral>0&solo_adultos_y_nna>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF9_THOGAR[solo_adultos_y_nna>0,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF9_THOGAR[umbral>0&multigeneracional>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF9_THOGAR[multigeneracional>0,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF9_THOGAR[umbral>0&solo_adultos_y_mayores>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF9_THOGAR[solo_adultos_y_mayores>0,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF9_THOGAR[umbral>0&solo_adultosmayores>0,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF9_THOGAR[solo_adultosmayores>0,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF9[umbral>0&SEXO==1,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF9[SEXO==1,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF9[umbral>0&SEXO==2,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF9[SEXO==2,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF9[umbral>0&EDAD<60,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF9[EDAD<60,sum(NPERSONAS*FE2)],
-                                         BASE_ODS382_EPF9[umbral>0&EDAD>=60,sum(NPERSONAS*FE2)]/BASE_ODS382_EPF9[EDAD>=60,sum(NPERSONAS*FE2)])
+                                    list(BASE_ODS382_EPF9_THOGAR[solo_adultos>0,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF9_THOGAR[solo_adultos_y_nna>0,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF9_THOGAR[multigeneracional>0,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF9_THOGAR[solo_adultos_y_mayores>0,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF9_THOGAR[solo_adultosmayores>0,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF9[SEXO==1,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF9[SEXO==2,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF9[EDAD<60,weightedMean((umbral>0)*1,NPERSONAS*FE2)],
+                                         BASE_ODS382_EPF9[EDAD>=60,weightedMean((umbral>0)*1,NPERSONAS*FE2)])
 )
 )
 
@@ -715,10 +720,10 @@ new_ODS382_aux<-data.table(version=character(),Prop_Nac=numeric(),GS_pp=numeric(
                        Jefe_H=numeric(),Jefe_M=numeric(),Jefe_60menos=numeric(),Jefe_60mas=numeric())
 
 new_ODS382_aux<-rbind(new_ODS382_aux,append(list("EPF5",BASE_ODS382_EPF5[,weightedMean((GS>0)*1,npersonas*FE2)],
-                                              BASE_ODS382_EPF5[,weightedMean(GS/npersonas*12/365.25,FE2)],
-                                              BASE_ODS382_EPF5[,weightedMean(GS/GT,FE2)],
-                                              BASE_ODS382_EPF5[,weightedMedian(GT/npersonas*12/365.25,FE2)],
-                                              BASE_ODS382_EPF5[,weightedMean(GT/npersonas*12/365.25,FE2)],
+                                              BASE_ODS382_EPF5[,weightedMean(GS/npersonas*12/365.25,npersonas*FE2)],
+                                              BASE_ODS382_EPF5[,weightedMean(GS/GT,npersonas*FE2)],
+                                              BASE_ODS382_EPF5[,weightedMedian(GT/npersonas*12/365.25,npersonas*FE2)],
+                                              BASE_ODS382_EPF5[,weightedMean(GT/npersonas*12/365.25,npersonas*FE2)],
                                               EPF5_u_115,
                                               Umbrales[EPF==5,PPA_215]),
                                             c(BASE_ODS382_EPF5_THOGAR[solo_adultos>0,sum(npersonas*FE2)],
@@ -734,10 +739,10 @@ new_ODS382_aux<-rbind(new_ODS382_aux,append(list("EPF5",BASE_ODS382_EPF5[,weight
                       )
 
 new_ODS382_aux<-rbind(new_ODS382_aux,append(list("EPF6",BASE_ODS382_EPF6[,weightedMean((GS>0)*1,PersonasXHogar*FE2)],
-                                              BASE_ODS382_EPF6[,weightedMean(GS/PersonasXHogar*12/365.25,FE2)],
-                                              BASE_ODS382_EPF6[,weightedMean(GS/GT,FE2)],
-                                              BASE_ODS382_EPF6[,weightedMedian(GT/PersonasXHogar*12/365.25,FE2)],
-                                              BASE_ODS382_EPF6[,weightedMean(GT/PersonasXHogar*12/365.25,FE2)],
+                                              BASE_ODS382_EPF6[,weightedMean(GS/PersonasXHogar*12/365.25,PersonasXHogar*FE2)],
+                                              BASE_ODS382_EPF6[,weightedMean(GS/GT,PersonasXHogar*FE2)],
+                                              BASE_ODS382_EPF6[,weightedMedian(GT/PersonasXHogar*12/365.25,PersonasXHogar*FE2)],
+                                              BASE_ODS382_EPF6[,weightedMean(GT/PersonasXHogar*12/365.25,PersonasXHogar*FE2)],
                                               EPF6_u_115,
                                               Umbrales[EPF==6,PPA_215]),
                                             c(BASE_ODS382_EPF6_THOGAR[solo_adultos>0,sum(PersonasXHogar*FE2)],
@@ -751,10 +756,10 @@ new_ODS382_aux<-rbind(new_ODS382_aux,append(list("EPF6",BASE_ODS382_EPF6[,weight
                                               BASE_ODS382_EPF6_SEX[Grupo_edad>=13,sum(PersonasXHogar*FE2)])/BASE_ODS382_EPF6[,sum(PersonasXHogar*FE2)])
                       )
 new_ODS382_aux<-rbind(new_ODS382_aux,append(list("EPF7",BASE_ODS382_EPF7[,weightedMean((GS>0)*1,NPERSONA*FE2)],
-                                              BASE_ODS382_EPF7[,weightedMean(GS/NPERSONA*12/365.25,FE2)],
-                                              BASE_ODS382_EPF7[,weightedMean(GS/GT,FE2)],
-                                              BASE_ODS382_EPF7[,weightedMedian(GT/NPERSONA*12/365.25,FE2)],
-                                              BASE_ODS382_EPF7[,weightedMean(GT/NPERSONA*12/365.25,FE2)],
+                                              BASE_ODS382_EPF7[,weightedMean(GS/NPERSONA*12/365.25,NPERSONA*FE2)],
+                                              BASE_ODS382_EPF7[,weightedMean(GS/GT,NPERSONA*FE2)],
+                                              BASE_ODS382_EPF7[,weightedMedian(GT/NPERSONA*12/365.25,NPERSONA*FE2)],
+                                              BASE_ODS382_EPF7[,weightedMean(GT/NPERSONA*12/365.25,NPERSONA*FE2)],
                                               EPF7_u_115,
                                               Umbrales[EPF==7,PPA_215]),
                                             c(BASE_ODS382_EPF7_THOGAR[solo_adultos>0,sum(NPERSONA*FE2)],
@@ -769,10 +774,10 @@ new_ODS382_aux<-rbind(new_ODS382_aux,append(list("EPF7",BASE_ODS382_EPF7[,weight
                       )
 
 new_ODS382_aux<-rbind(new_ODS382_aux,append(list("EPF8",BASE_ODS382_EPF8[,weightedMean((GS>0)*1,NPERSONAS*FE2)],
-                                              BASE_ODS382_EPF8[,weightedMean(GS/NPERSONAS*12/365.25,FE2)],
-                                              BASE_ODS382_EPF8[,weightedMean(GS/GT,FE2)],
-                                              BASE_ODS382_EPF8[,weightedMedian(GT/NPERSONAS*12/365.25,FE2)],
-                                              BASE_ODS382_EPF8[,weightedMean(GT/NPERSONAS*12/365.25,FE2)],
+                                              BASE_ODS382_EPF8[,weightedMean(GS/NPERSONAS*12/365.25,NPERSONAS*FE2)],
+                                              BASE_ODS382_EPF8[,weightedMean(GS/GT,NPERSONAS*FE2)],
+                                              BASE_ODS382_EPF8[,weightedMedian(GT/NPERSONAS*12/365.25,NPERSONAS*FE2)],
+                                              BASE_ODS382_EPF8[,weightedMean(GT/NPERSONAS*12/365.25,NPERSONAS*FE2)],
                                               EPF8_u_115,
                                               Umbrales[EPF==8,PPA_215]),
                                             c(BASE_ODS382_EPF8_THOGAR[solo_adultos>0,sum(NPERSONAS*FE2)],
@@ -787,10 +792,10 @@ new_ODS382_aux<-rbind(new_ODS382_aux,append(list("EPF8",BASE_ODS382_EPF8[,weight
                       )
 
 new_ODS382_aux<-rbind(new_ODS382_aux,append(list("EPF9",BASE_ODS382_EPF9[,weightedMean((GS>0)*1,NPERSONAS*FE2)],
-                                              BASE_ODS382_EPF9[,weightedMean(GS/NPERSONAS*12/365.25,FE2)],
-                                              BASE_ODS382_EPF9[,weightedMean(GS/GT,FE2)],
-                                              BASE_ODS382_EPF9[,weightedMedian(GT/NPERSONAS*12/365.25,FE2)],
-                                              BASE_ODS382_EPF9[,weightedMean(GT/NPERSONAS*12/365.25,FE2)],
+                                              BASE_ODS382_EPF9[,weightedMean(GS/NPERSONAS*12/365.25,NPERSONAS*FE2)],
+                                              BASE_ODS382_EPF9[,weightedMean(GS/GT,NPERSONAS*FE2)],
+                                              BASE_ODS382_EPF9[,weightedMedian(GT/NPERSONAS*12/365.25,NPERSONAS*FE2)],
+                                              BASE_ODS382_EPF9[,weightedMean(GT/NPERSONAS*12/365.25,NPERSONAS*FE2)],
                                               EPF9_u_115,
                                               Umbrales[EPF==9,PPA_215]),
                                             c(BASE_ODS382_EPF9_THOGAR[solo_adultos>0,sum(NPERSONAS*FE2)],
@@ -805,7 +810,9 @@ new_ODS382_aux<-rbind(new_ODS382_aux,append(list("EPF9",BASE_ODS382_EPF9[,weight
                       )
 
 writexl::write_xlsx(list("Indicador 3.8.2 revisado"=new_ODS382,"Estadísticas auxiliares"=new_ODS382_aux),
-                    "C:/Users/ismaelaguilera/OneDrive - SUBSECRETARIA DE SALUD PUBLICA/2025/ODS 382 Consulta/Revision_ODS382_con_datos_web_2025_2.xlsx")
+                    "C:/Users/ismaelaguilera/OneDrive - SUBSECRETARIA DE SALUD PUBLICA/2025/ODS 382 Consulta/Revision_ODS382_con_datos_web_2025_11072025_2.xlsx")
+
+beepr::beep(2)
 
 # BASE_ODS382_EPF9[,Anio:=2021]
 # BASE_ODS382_EPF9[,Periodo:=2]
